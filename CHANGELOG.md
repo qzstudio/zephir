@@ -5,9 +5,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Changed
+- Moved `cache` and `logs` directories to the user's home.
+  - On macOS Zephir will use `XDG` if it is possible, otherwise `$HOME/Library`
+  - On Windows Zephir will use `LOCALAPPDATA` if it is possible, otherwise home dir as a base path
+  - In any other cases, e.g. Linux, BSD and so on Zephir will use `XDG`if it is possible,
+    otherwise `$HOME/.local` and `$HOME/.cache`
+
 ### Fixed
 - Array of object as return type is reported to PHP as type, not array
   [#1779](https://github.com/phalcon/zephir/issues/1779)
+- Use namespace as a prefix for ini name
+  [#1604](https://github.com/phalcon/zephir/issues/1604)
 
 ## [0.11.9] - 2019-01-15
 - Fixed `zend_closure` declaration to reflect PHP 7.3 changes

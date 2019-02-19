@@ -5,12 +5,13 @@
  *
  * (c) Zephir Team <team@zephir-lang.com>
  *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
+ * For the full copyright and license information, please view
+ * the LICENSE file that was distributed with this source code.
  */
 
 namespace Zephir\DependencyInjection;
 
+use const DIRECTORY_SEPARATOR;
 use Oneup\FlysystemBundle\OneupFlysystemBundle;
 use Symfony\Bundle\MonologBundle\MonologBundle;
 use Symfony\Component\Config\Loader\LoaderInterface;
@@ -18,12 +19,13 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 use Symfony\Component\HttpKernel\Kernel;
 use Zephir\DependencyInjection\CompilerPass\CollectCommandsToApplicationCompilerPass;
+use function Zephir\is_macos;
+use function Zephir\is_windows;
 use Zephir\Zephir;
 
 final class ZephirKernel extends Kernel
 {
     private $extraConfigFiles = [];
-    private $startedDirectory;
 
     /**
      * AppKernel constructor.
@@ -35,7 +37,6 @@ final class ZephirKernel extends Kernel
     public function __construct($environment, $debug, array $configFiles = [])
     {
         $this->extraConfigFiles = $configFiles;
-        $this->startedDirectory = getcwd();
 
         parent::__construct($environment, $debug);
     }
@@ -78,8 +79,25 @@ final class ZephirKernel extends Kernel
     {
         // allows container rebuild when config or version changes
         $hash = Zephir::VERSION.$this->environment.serialize($this->extraConfigFiles);
+        $home = getenv('HOME') ?: (getenv('HOMEDRIVE').DIRECTORY_SEPARATOR.getenv('HOMEPATH'));
 
-        return $this->startedDirectory.'/.zephir/'.substr(md5($hash), 0, 16).'/cache';
+        if (is_macos()) {
+            $cacheDir = getenv('XDG_CACHE_HOME') ?: $home.'/Library/Caches';
+            $cacheDir .= '/Zephir';
+        } elseif (is_windows()) {
+            $cacheDir = getenv('LOCALAPPDATA') ?: $home;
+            $cacheDir .= '\\Zephir\\Cache';
+        } else {
+            $cacheDir = getenv('XDG_CACHE_HOME') ?: $home.'/.cache';
+            $cacheDir .= '/zephir';
+        }
+
+        $path = $cacheDir.DIRECTORY_SEPARATOR.substr(md5($hash), 0, 16);
+        if (!is_dir($path) && !mkdir($path, 0777, true) && !is_dir($path)) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $path));
+        }
+
+        return $path;
     }
 
     /**
@@ -89,10 +107,26 @@ final class ZephirKernel extends Kernel
      */
     public function getLogDir()
     {
-        // allows container rebuild when config or version changes
-        $hash = Zephir::VERSION.$this->environment.serialize($this->extraConfigFiles);
+        $home = getenv('HOME') ?: (getenv('HOMEDRIVE').DIRECTORY_SEPARATOR.getenv('HOMEPATH'));
 
-        return $this->startedDirectory.'/.zephir/'.substr(md5($hash), 0, 16).'/logs';
+        if (is_macos()) {
+            $stateDir = getenv('XDG_STATE_HOME') ?: $home.'/Library';
+            $stateDir .= '/Zephir/State';
+        } elseif (is_windows()) {
+            $stateDir = getenv('LOCALAPPDATA') ?: $home;
+            $stateDir .= '\\Zephir\\State';
+        } else {
+            // See: https://stackoverflow.com/a/27965014/1661465
+            $stateDir = getenv('XDG_STATE_HOME') ?: $home.'/.local/state';
+            $stateDir .= '/zephir';
+        }
+
+        $path = $stateDir.DIRECTORY_SEPARATOR.Zephir::VERSION;
+        if (!is_dir($path) && !mkdir($path, 0777, true) && !is_dir($path)) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $path));
+        }
+
+        return $path;
     }
 
     /**
