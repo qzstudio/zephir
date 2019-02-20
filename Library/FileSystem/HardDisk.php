@@ -15,6 +15,7 @@ use League\Flysystem;
 use Zephir\Exception\FileSystemException;
 use Zephir\Exception\InvalidArgumentException;
 use Zephir\Exception\RuntimeException;
+use Zephir\Zephir;
 
 /**
  * Zephir\FileSystem\HardDisk.
@@ -43,7 +44,7 @@ final class HardDisk implements FileSystemInterface
      *
      * @throws InvalidArgumentException
      */
-    public function __construct(Flysystem\FilesystemInterface $filesystem, $localPath = 'IR')
+    public function __construct(Flysystem\FilesystemInterface $filesystem, $localPath = Zephir::VERSION)
     {
         $this->filesystem = $filesystem;
         $this->localPath = trim($localPath, '\\/');

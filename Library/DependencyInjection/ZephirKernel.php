@@ -25,7 +25,8 @@ use Zephir\Zephir;
 
 final class ZephirKernel extends Kernel
 {
-    private $extraConfigFiles = [];
+    private $extraConfigFiles;
+    private $startedDir;
 
     /**
      * AppKernel constructor.
@@ -37,6 +38,7 @@ final class ZephirKernel extends Kernel
     public function __construct($environment, $debug, array $configFiles = [])
     {
         $this->extraConfigFiles = $configFiles;
+        $this->startedDir = getcwd();
 
         parent::__construct($environment, $debug);
     }
@@ -148,6 +150,16 @@ final class ZephirKernel extends Kernel
     }
 
     /**
+     * Gets the local cache directory used internally by zephir.
+     *
+     * @return string The local cache dir
+     */
+    public function getStartedDir()
+    {
+        return $this->startedDir.'/.zephir';
+    }
+
+    /**
      * {@inheritdoc}
      *
      * @param ContainerBuilder $containerBuilder
@@ -155,5 +167,18 @@ final class ZephirKernel extends Kernel
     protected function build(ContainerBuilder $containerBuilder)
     {
         $containerBuilder->addCompilerPass(new CollectCommandsToApplicationCompilerPass());
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return array An array of kernel parameters
+     */
+    protected function getKernelParameters()
+    {
+        $parameters = parent::getKernelParameters();
+        $parameters['kernel.local_cache_dir'] = $this->getStartedDir();
+
+        return $parameters;
     }
 }

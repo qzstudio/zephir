@@ -28,7 +28,7 @@ oneup_flysystem:
   adapters:
     compiler_adapter:
       local:
-        directory: "%kernel.cache_dir%"
+        directory: "%kernel.local_cache_dir%"
   filesystems:
     compiler_local:
       adapter: compiler_adapter
